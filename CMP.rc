@@ -52,12 +52,12 @@ BEGIN
         BLOCK "241a04b0"
         BEGIN
             VALUE "CompanyName", "Momir Stanišiæ"
-            VALUE "FileDescription", "Console Media Player (Special Edition)"
+            VALUE "FileDescription", "Console Media Player"
             VALUE "FileVersion", "1.0.0.1"
-            VALUE "InternalName", "Console Media Player (Special Edition)"
+            VALUE "InternalName", "Console Media Player"
             VALUE "LegalCopyright", "Copyright (C) 2020"
             VALUE "OriginalFilename", "CMP.exe"
-            VALUE "ProductName", "Console Media Player (Special Edition)"
+            VALUE "ProductName", "Console Media Player"
             VALUE "ProductVersion", "1.0.0.1"
         END
     END
