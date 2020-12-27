@@ -458,9 +458,9 @@ void main(int argc, char **argv) {
 	HideCursor();
 	GetTempPathW(MAX_PATH, temp.data());
 	ios_base::sync_with_stdio(false);
-	wstring videoname = argc > 1 ? utf8(argv[1]) : L"demo.mp4";
+	wstring videoname = argc > 1 ? utf8(argv[1]) : absolutedir + L"demo.mp4";
 
-	_wsystem((absolutedir + L"ffmpeg.exe -y -i " + videoname + L" -acodec pcm_s16le -f s16le -ac 1 -ar 44100 \"" + temp.c_str() + L"ConsolePlayerAudio.pcm\" 2>NUL").c_str());
+	_wsystem((absolutedir + L"ffmpeg.exe -y -i \"" + videoname + L"\" -acodec pcm_s16le -f s16le -ac 1 -ar 44100 \"" + temp.c_str() + L"ConsolePlayerAudio.pcm\" 2>NUL").c_str());
 	audiosize = std::filesystem::file_size(temp.c_str() + wstring(L"ConsolePlayerAudio.pcm"));
 	ifstream fajl(temp.c_str() + wstring(L"ConsolePlayerAudio.pcm"), ios::binary);
 	zvuk.resize(audiosize / 2);
