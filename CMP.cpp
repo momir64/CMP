@@ -45,29 +45,15 @@ malovelko = true, printmv = false, tisina = false, volprinted = false, muted = f
 pustenog = true, pustenodl = true, pustenos = true, pustenof = true, pustenof5 = true;
 int color[] = { 40, 44, 42, 46, 41, 45, 43, 47, 100, 104, 102, 106, 101, 105, 103, 107 };
 AREA VOL, BACK, PLAY, FRONT, HDSD, SLIDE;
-wstring temp(MAX_PATH, NULL);
+string temp(MAX_PATH, NULL);
+string absolutedir;
 string NLINE;
 
-string utf8(const wstring &wstr) {
-	if (wstr.empty()) return std::string();
-	int size_needed = WideCharToMultiByte(CP_UTF8, 0, &wstr[0], (int)wstr.size(), NULL, 0, NULL, NULL);
-	string strTo(size_needed, 0);
-	WideCharToMultiByte(CP_UTF8, 0, &wstr[0], (int)wstr.size(), &strTo[0], size_needed, NULL, NULL);
-	return strTo;
-}
-wstring utf8(const string &str) {
-	if (str.empty()) return std::wstring();
-	int size_needed = MultiByteToWideChar(CP_UTF8, 0, &str[0], (int)str.size(), NULL, 0);
-	wstring wstrTo(size_needed, 0);
-	MultiByteToWideChar(CP_UTF8, 0, &str[0], (int)str.size(), &wstrTo[0], size_needed);
-	return wstrTo;
-}
-wstring absolutedir;
 void GetDir() {
-	WCHAR ExePath[MAX_PATH];
-	GetModuleFileNameW(NULL, ExePath, MAX_PATH);
+	char ExePath[MAX_PATH];
+	GetModuleFileNameA(NULL, ExePath, MAX_PATH);
 	absolutedir = ExePath;
-	while (absolutedir.back() != L'\\')
+	while (absolutedir.back() != '\\')
 		absolutedir.pop_back();
 }
 string cf(int c, int x) {
@@ -456,22 +442,25 @@ void layout() {
 void main(int argc, char **argv) {
 	GetDir();
 	HideCursor();
-	GetTempPathW(MAX_PATH, temp.data());
 	ios_base::sync_with_stdio(false);
-	wstring videoname = argc > 1 ? utf8(argv[1]) : absolutedir + L"demo.mp4";
+	GetTempPathA(MAX_PATH, temp.data());
+	SetCurrentDirectoryA(absolutedir.c_str());
+	string videoname = argc > 1 ? argv[1] : "demo.mp4";
 
-	_wsystem((absolutedir + L"ffmpeg.exe -y -i \"" + videoname + L"\" -acodec pcm_s16le -f s16le -ac 1 -ar 44100 \"" + temp.c_str() + L"ConsolePlayerAudio.pcm\" 2>NUL").c_str());
-	audiosize = std::filesystem::file_size(temp.c_str() + wstring(L"ConsolePlayerAudio.pcm"));
-	ifstream fajl(temp.c_str() + wstring(L"ConsolePlayerAudio.pcm"), ios::binary);
+	system(("ffmpeg.exe -y -i \"" + videoname + "\" -acodec pcm_s16le -f s16le -ac 1 -ar 44100 \"" + temp.c_str() + "ConsolePlayerAudio.pcm\" 2>NUL").c_str());
+	audiosize = std::filesystem::file_size(temp.c_str() + string("ConsolePlayerAudio.pcm"));
+	ifstream fajl(temp.c_str() + string("ConsolePlayerAudio.pcm"), ios::binary);
 	zvuk.resize(audiosize / 2);
 	fajl.read((char *)zvuk.data(), audiosize);
 	Pa pa(paFunc, 0, 1, 44100, 0, NULL);
 	audiosize /= 2;
+	fajl.close();
+	DeleteFileA((temp.c_str() + string("ConsolePlayerAudio.pcm")).c_str());
 
 	high_resolution_clock::time_point pt, ptl = high_resolution_clock::now(), ptd = high_resolution_clock::now(),
 		ptg = high_resolution_clock::now(), ptdl = high_resolution_clock::now(), hidevol = high_resolution_clock::now();
 	bool setup = true, first = true, next = false;
-	VideoCapture video(utf8(videoname));
+	VideoCapture video(videoname);
 	uintmax_t frame = 0;
 	Mat img, imgold;
 	string buf;
