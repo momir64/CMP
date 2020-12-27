@@ -28,6 +28,45 @@ LANGUAGE LANG_SERBIAN, SUBLANG_SERBIAN_SERBIA_LATIN
 // remains consistent on all systems.
 IDI_ICON1               ICON                    "icon.ico"
 
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Version
+//
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION 1,0,0,1
+ PRODUCTVERSION 1,0,0,1
+ FILEFLAGSMASK 0x3fL
+#ifdef _DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS 0x40004L
+ FILETYPE 0x1L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "241a04b0"
+        BEGIN
+            VALUE "CompanyName", "Momir Stanišiæ"
+            VALUE "FileDescription", "Console Media Player (Special Edition)"
+            VALUE "FileVersion", "1.0.0.1"
+            VALUE "InternalName", "Console Media Player (Special Edition)"
+            VALUE "LegalCopyright", "Copyright (C) 2020"
+            VALUE "OriginalFilename", "CMP.exe"
+            VALUE "ProductName", "Console Media Player (Special Edition)"
+            VALUE "ProductVersion", "1.0.0.1"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x241a, 1200
+    END
+END
+
 #endif    // Serbian (Latin, Serbia) resources
 /////////////////////////////////////////////////////////////////////////////
 
