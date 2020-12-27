@@ -40,13 +40,36 @@ float speed = 1, speedvideo = 1;
 int velicina = 0, velicinavideo = 0;
 int RSTEP = 51, GSTEP = 51, BSTEP = 51;
 int width = 0, widthbox = 0, height = 0;
-bool playing = true, playingvideo = true, playingprinted = true, mota = false, motatraka = false, motavideo = false, showvol = false, malovelko = true, printmv = false,
-tisina = false, volprinted = false, muted = false, firstever = true, pustenol = true, pustenod = true, pustenog = true, pustenodl = true, pustenos = true, pustenof = true;
+bool playing = true, playingvideo = true, playingprinted = true, mota = false, motatraka = false, motavideo = false, showvol = false,
+malovelko = true, printmv = false, tisina = false, volprinted = false, muted = false, firstever = true, pustenol = true, pustenod = true,
+pustenog = true, pustenodl = true, pustenos = true, pustenof = true, pustenof5 = true;
 int color[] = { 40, 44, 42, 46, 41, 45, 43, 47, 100, 104, 102, 106, 101, 105, 103, 107 };
 AREA VOL, BACK, PLAY, FRONT, HDSD, SLIDE;
-string temp(MAX_PATH, NULL);
+wstring temp(MAX_PATH, NULL);
 string NLINE;
 
+string utf8(const wstring &wstr) {
+	if (wstr.empty()) return std::string();
+	int size_needed = WideCharToMultiByte(CP_UTF8, 0, &wstr[0], (int)wstr.size(), NULL, 0, NULL, NULL);
+	string strTo(size_needed, 0);
+	WideCharToMultiByte(CP_UTF8, 0, &wstr[0], (int)wstr.size(), &strTo[0], size_needed, NULL, NULL);
+	return strTo;
+}
+wstring utf8(const string &str) {
+	if (str.empty()) return std::wstring();
+	int size_needed = MultiByteToWideChar(CP_UTF8, 0, &str[0], (int)str.size(), NULL, 0);
+	wstring wstrTo(size_needed, 0);
+	MultiByteToWideChar(CP_UTF8, 0, &str[0], (int)str.size(), &wstrTo[0], size_needed);
+	return wstrTo;
+}
+wstring absolutedir;
+void GetDir() {
+	WCHAR ExePath[MAX_PATH];
+	GetModuleFileNameW(NULL, ExePath, MAX_PATH);
+	absolutedir = ExePath;
+	while (absolutedir.back() != L'\\')
+		absolutedir.pop_back();
+}
 string cf(int c, int x) {
 	if (!x)	return "\x1b[40m ";
 	return "\x1b[" + to_string(color[3 * x + c - 2]) + "m ";
@@ -431,15 +454,15 @@ void layout() {
 }
 
 void main(int argc, char **argv) {
+	GetDir();
 	HideCursor();
-	GetTempPathA(MAX_PATH, temp.data());
+	GetTempPathW(MAX_PATH, temp.data());
 	ios_base::sync_with_stdio(false);
-	string videoname = argc > 1 ? argv[1] : "demo.mp4";
+	wstring videoname = argc > 1 ? utf8(argv[1]) : L"demo.mp4";
 
-	system(("ffmpeg.exe -y -i " + videoname + " -acodec pcm_s16le -f s16le -ac 1 -ar 44100 \"" + temp.c_str() + "ConsolePlayerAudio.pcm\" 2>NUL").c_str());
-
-	audiosize = std::filesystem::file_size(temp.c_str() + string("ConsolePlayerAudio.pcm"));
-	ifstream fajl(temp.c_str() + string("ConsolePlayerAudio.pcm"), ios::binary);
+	_wsystem((absolutedir + L"ffmpeg.exe -y -i " + videoname + L" -acodec pcm_s16le -f s16le -ac 1 -ar 44100 \"" + temp.c_str() + L"ConsolePlayerAudio.pcm\" 2>NUL").c_str());
+	audiosize = std::filesystem::file_size(temp.c_str() + wstring(L"ConsolePlayerAudio.pcm"));
+	ifstream fajl(temp.c_str() + wstring(L"ConsolePlayerAudio.pcm"), ios::binary);
 	zvuk.resize(audiosize / 2);
 	fajl.read((char *)zvuk.data(), audiosize);
 	Pa pa(paFunc, 0, 1, 44100, 0, NULL);
@@ -448,12 +471,23 @@ void main(int argc, char **argv) {
 	high_resolution_clock::time_point pt, ptl = high_resolution_clock::now(), ptd = high_resolution_clock::now(),
 		ptg = high_resolution_clock::now(), ptdl = high_resolution_clock::now(), hidevol = high_resolution_clock::now();
 	bool setup = true, first = true, next = false;
-	VideoCapture video(videoname);
+	VideoCapture video(utf8(videoname));
 	uintmax_t frame = 0;
 	Mat img, imgold;
 	string buf;
 
 	while (true) {
+		if (!pustenof5 && !GetAsyncKeyState(VK_F5))
+			pustenof5 = true;
+		if (pustenof5 && GetAsyncKeyState(VK_F5) && Foreground()) {
+			velicina = 0;
+			malovelko = true;
+			firstever = true;
+			SetUpConsole();
+			layout();
+			pustenof5 = false;
+			first = true;
+		}
 		if (!pustenof && !GetAsyncKeyState('F'))
 			pustenof = true;
 		if (pustenof && GetAsyncKeyState('F') && Foreground() && height < 87 && width < 195) {
@@ -543,7 +577,7 @@ void main(int argc, char **argv) {
 				first = true;
 			}
 			else {
-				pusteno += (duration_cast<duration<double>>(high_resolution_clock::now() - pt)).count();
+				pusteno = dt;
 				playingvideo = false;
 			}
 		}
