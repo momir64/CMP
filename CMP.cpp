@@ -42,13 +42,58 @@ int RSTEP = 51, GSTEP = 51, BSTEP = 51;
 int width = 0, widthbox = 0, height = 0;
 bool playing = true, playingvideo = true, playingprinted = true, mota = false, motatraka = false, motavideo = false, showvol = false,
 malovelko = true, printmv = false, tisina = false, volprinted = false, muted = false, firstever = true, pustenol = true, pustenod = true,
-pustenog = true, pustenodl = true, pustenos = true, pustenof = true, pustenof5 = true;
+pustenog = true, pustenodl = true, pustenos = true, pustenof = true, pustenof5 = true, setup = true;
 int color[] = { 40, 44, 42, 46, 41, 45, 43, 47, 100, 104, 102, 106, 101, 105, 103, 107 };
 AREA VOL, BACK, PLAY, FRONT, HDSD, SLIDE;
 string temp(MAX_PATH, NULL);
+VideoCapture video;
 string absolutedir;
+string videoname;
 string NLINE;
 
+void HideCursor() {
+	CONSOLE_CURSOR_INFO cinf;
+	cinf.dwSize = 100;
+	cinf.bVisible = false;
+	SetConsoleCursorInfo(GetStdHandle(STD_OUTPUT_HANDLE), &cinf);
+}
+bool Foreground() {
+	HWND hwnd = GetForegroundWindow();
+	if (hwnd == NULL)
+		return false;
+	HWND curhwnd = GetConsoleWindow();
+	if (curhwnd == NULL)
+		return false;
+
+	DWORD pid;
+	if (GetWindowThreadProcessId(hwnd, &pid) == 0)
+		return false;
+	DWORD curpid;
+	if (GetWindowThreadProcessId(curhwnd, &curpid) == 0)
+		return false;
+
+	return (pid == curpid);
+}
+bool operator==(COORD a, COORD b) {
+	return a.X == b.X && a.Y == b.Y;
+}
+std::size_t DirNum(std::filesystem::path path) {
+	return (std::size_t)std::distance(std::filesystem::directory_iterator{ path }, std::filesystem::directory_iterator{});
+}
+int simple(int x) {
+	if (x > 229) return 5;
+	if (x > 178) return 4;
+	if (x > 127) return 3;
+	if (x > 74)	return 2;
+	if (x > 25)	return 1;
+	return 0;
+}
+string pos(int y, int x) {
+	return "\x1b[" + to_string(y) + ";" + to_string(x) + "H";
+}
+string nline(int x) {
+	return "\n\x1b[" + to_string(x) + "G";
+}
 void GetDir() {
 	char ExePath[MAX_PATH];
 	GetModuleFileNameA(NULL, ExePath, MAX_PATH);
@@ -102,9 +147,9 @@ void SetUpConsole() {
 	}
 	else if (velicina == -1) {
 		height = -21;
-		widthbox = 80;
-		cfi.dwFontSize.X = 15;
-		cfi.dwFontSize.Y = 30;
+		widthbox = 60;
+		cfi.dwFontSize.X = 14;
+		cfi.dwFontSize.Y = 32;
 		info.ColorTable[7] = RGB(204, 204, 204);
 	}
 	else {
@@ -131,54 +176,24 @@ void SetUpConsole() {
 		firstever = false;
 	}
 	if (velicina == -1) {
-		cout << cf(0, 0) << "\rRezolucija videa je prevelika!" << endl << "Pritisinite bilo koje dugme za nastavak...";
-		_getch();
-		exit(-1);
+		cout << cf(0, 0) << "\rRezolucija videa je prevelika!" << endl << "Da li zelite generisati manju verziju videa? (D/n)";
+		cout << cf(0, 0) << "                                " << endl << "                                                  ";
+		char c = _getch();
+		if (toupper(c) == 'D' || c == '\r' || c == '\n') {
+			cout << pos(0, 0) << "                                " << endl << "                                                  ";
+			cout << pos(0, 0) << "Video je u pripremi, molimo sacekajte!";
+			if ((float)width / height >= 195.0 / 87)
+				system(("ffmpeg.exe -y -i \"" + videoname + "\" -vf scale=144:-2 \"" + temp.c_str() + "ConsolePlayerVideoSmall.mp4\" 2>NUL").c_str());
+			else
+				system(("ffmpeg.exe -y -i \"" + videoname + "\" -vf scale=-2:72 \"" + temp.c_str() + "ConsolePlayerVideoSmall.mp4\" 2>NUL").c_str());
+			videoname = temp.c_str() + string("ConsolePlayerVideoSmall.mp4");
+			video = VideoCapture(videoname);
+			firstever = true;
+			setup = true;
+		}
+		else
+			exit(-1);
 	}
-}
-
-void HideCursor() {
-	CONSOLE_CURSOR_INFO cinf;
-	cinf.dwSize = 100;
-	cinf.bVisible = false;
-	SetConsoleCursorInfo(GetStdHandle(STD_OUTPUT_HANDLE), &cinf);
-}
-bool Foreground() {
-	HWND hwnd = GetForegroundWindow();
-	if (hwnd == NULL)
-		return false;
-	HWND curhwnd = GetConsoleWindow();
-	if (curhwnd == NULL)
-		return false;
-
-	DWORD pid;
-	if (GetWindowThreadProcessId(hwnd, &pid) == 0)
-		return false;
-	DWORD curpid;
-	if (GetWindowThreadProcessId(curhwnd, &curpid) == 0)
-		return false;
-
-	return (pid == curpid);
-}
-bool operator==(COORD a, COORD b) {
-	return a.X == b.X && a.Y == b.Y;
-}
-std::size_t DirNum(std::filesystem::path path) {
-	return (std::size_t)std::distance(std::filesystem::directory_iterator{ path }, std::filesystem::directory_iterator{});
-}
-int simple(int x) {
-	if (x > 229) return 5;
-	if (x > 178) return 4;
-	if (x > 127) return 3;
-	if (x > 74)	return 2;
-	if (x > 25)	return 1;
-	return 0;
-}
-string pos(int y, int x) {
-	return "\x1b[" + to_string(y) + ";" + to_string(x) + "H";
-}
-string nline(int x) {
-	return "\n\x1b[" + to_string(x) + "G";
 }
 
 vector<short> zvuk;
@@ -445,7 +460,7 @@ void main(int argc, char **argv) {
 	ios_base::sync_with_stdio(false);
 	GetTempPathA(MAX_PATH, temp.data());
 	SetCurrentDirectoryA(absolutedir.c_str());
-	string videoname = argc > 1 ? argv[1] : "demo.mp4";
+	videoname = argc > 1 ? argv[1] : "demo.mp4";
 
 	system(("ffmpeg.exe -y -i \"" + videoname + "\" -acodec pcm_s16le -f s16le -ac 1 -ar 44100 \"" + temp.c_str() + "ConsolePlayerAudio.pcm\" 2>NUL").c_str());
 	audiosize = std::filesystem::file_size(temp.c_str() + string("ConsolePlayerAudio.pcm"));
@@ -459,8 +474,8 @@ void main(int argc, char **argv) {
 
 	high_resolution_clock::time_point pt, ptl = high_resolution_clock::now(), ptd = high_resolution_clock::now(),
 		ptg = high_resolution_clock::now(), ptdl = high_resolution_clock::now(), hidevol = high_resolution_clock::now();
-	bool setup = true, first = true, next = false;
-	VideoCapture video(videoname);
+	bool first = true, next = false;
+	video = VideoCapture(videoname);
 	uintmax_t frame = 0;
 	Mat img, imgold;
 	string buf;
@@ -585,6 +600,7 @@ void main(int argc, char **argv) {
 		}
 		tisina = false;
 		if (setup) {
+			setup = false;
 			widthbox = max(120, img.cols);
 			width = img.cols;
 			height = img.rows;
@@ -595,6 +611,9 @@ void main(int argc, char **argv) {
 			if (height > 142 || width > 300)
 				velicina = -1;
 			SetUpConsole();
+			velicina = 0;
+			if (setup)
+				continue;
 			thread Mover(mouse);
 			Mover.detach();
 			layout();
@@ -651,7 +670,6 @@ void main(int argc, char **argv) {
 		frame++;
 
 		imgold = img.clone();
-		setup = false;
 		first = false;
 	}
 }
